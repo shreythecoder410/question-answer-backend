@@ -4,5 +4,6 @@ const upload = require("../middleware/multer")
 const router = express.Router()
 
 router.post("/register",upload.single("profileImage"), AuthController.register)
+router.post("/verify-otp",AuthController.verifyOtp)
 
 module.exports =router

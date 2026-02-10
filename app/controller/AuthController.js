@@ -1,6 +1,8 @@
+const sendEmailVerificationOTP = require("../helper/emailVerify")
 const User = require("../models/user")
 const AuthValidation = require("../validation/auth")
 const bcrypt = require("bcryptjs")
+const OTPModel = require("../models/otp")
 
 
 class AuthController {
@@ -35,8 +37,11 @@ class AuthController {
                 name,
                 email,
                 password: hashedPassword,
-                profileImage
+                profileImage,
+                isVerified: false
             })
+
+            await sendEmailVerificationOTP(user)
 
             return res.status(201).json({
                 success: true,
@@ -56,6 +61,38 @@ class AuthController {
             })
         }
     }
+
+
+    async verifyOtp(req, res) {
+        try {
+            const { userId, otp } = req.body
+            const otpData = await OTPModel.findOne({ userId, otp })
+
+            if (!otpData) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid Otp"
+                })
+            }
+
+
+            await User.findByIdAndUpdate(userId, { isVerified: true })
+            await OTPModel.deleteOne({ _id: otpData._id })
+            return res.status(200).json({
+                sucess: true,
+                message: "Email Verified successfully"
+            })
+
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            })
+
+        }
+    }
+
+
 }
 
 module.exports = new AuthController()
